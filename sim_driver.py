@@ -1,7 +1,11 @@
 import time
-from selenium import webdriver
-from bs4 import BeautifulSoup
 from collections import defaultdict
+from bs4 import BeautifulSoup
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+
 
 def parse_info(driver):
     try:
@@ -27,11 +31,13 @@ def get_info(url, driver=None):
     """
     if driver is None:
         driver = webdriver.Chrome()
-    for _ in range(5):
+    for _ in range(6):
         driver.get(url)
-        time.sleep(4)
+        # time.sleep(4)
         try:
-            ele = driver.find_element_by_xpath("//div[@class='sort-box']/span[7]")
+            # ele = driver.find_element_by_xpath("//div[@class='sort-box']/span[7]")
+            ele = WebDriverWait(driver, 10).until(EC.presence_of_element_located(
+(By.XPATH, "//div[@class='sort-box']/span[7]")))
             ele.click()
         except:
             continue

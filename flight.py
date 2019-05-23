@@ -1,14 +1,10 @@
 import datetime
-import os
+import json
+from tqdm import tqdm
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from sim_driver import get_info
-import json
 from log_parse import parse_log
-
-start_date = datetime.date(2019, 7, 20)
-end_date = datetime.date(2019, 9, 1)
-step = datetime.timedelta(days=1)
 
 def day_range(start_date, end_date, step):
     while start_date <= end_date:
@@ -28,8 +24,9 @@ def base_writer(info_dict):
         writer.write(str(info_dict))
         writer.write('\n')
 
-def collect(driver, route='oneway-ctu-yto'):
+def collect(driver, start_date, end_date, step, route='oneway-ctu-yto'):
     recode = {}
+    pbar = tqdm(total=(end_date-start_date).days, ascii=True)
     for date in day_range(start_date, end_date, step):
         date_isoformat = date.isoformat()
         url = make_url(date_isoformat, route=route)
@@ -37,6 +34,9 @@ def collect(driver, route='oneway-ctu-yto'):
             recode[date_isoformat] = get_info(url, driver=driver)
         except KeyError:
             break
+        else:
+            pbar.update(1)
+    pbar.close()
     return recode
 
 def gen_airport():
@@ -50,18 +50,23 @@ def txt_log(line):
         log.write(f'{datetime.datetime.now()} {line}\n')
 
 if __name__ == "__main__":
+    start_date = datetime.date(2019, 7, 20)
+    end_date = datetime.date(2019, 9, 1)
+    step = datetime.timedelta(days=1)
     driverOption = Options()
-    driverOption.add_argument('blink-settings=imagesEnabled=false')
-    
+
+    # driverOption.add_argument('blink-settings=imagesEnabled=false')
+    driverOption.add_argument("--headless")
     driver = webdriver.Chrome(options=driverOption)
     dones = parse_log()
-    print(dones)
-    for airport in gen_airport():
+    airports = list(gen_airport())
+    print(f"{len(dones)} airports have done")
+    print(f"{len(airports)-len(dones)} others are in the queue")
+    for airport in tqdm(airports, ascii=True):
         if airport in dones:
             continue
         route = f'oneway-{airport}-yto'
-        
-        recode = collect(driver, route=route)
+        recode = collect(driver, start_date, end_date, step, route=route)
         if len(recode) == 0:
             txt_log(f'{airport} nothing')
             continue

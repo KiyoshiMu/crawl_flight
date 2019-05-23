@@ -10,7 +10,8 @@ arrive_loc, arrive_time, note, price".split(', ')
     temp = df['price'].str.extract(r'(?P<currency>\D*)(?P<price>\d+)')
     df['price'] = pd.to_numeric(temp['price'])
     df['currency'] = temp['currency']
-    return df.nsmallest(bound, 'price').reset_index(drop=True)
+    return df
+    # return df.nsmallest(bound, 'price').reset_index(drop=True)
 
 def txt_dict():
     with open('temp.txt', 'r', encoding='utf-8') as temp:
